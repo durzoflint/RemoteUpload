@@ -3,6 +3,7 @@
     package="com.durzoflint.remoteupload">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />

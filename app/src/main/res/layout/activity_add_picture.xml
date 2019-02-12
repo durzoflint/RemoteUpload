@@ -26,12 +26,12 @@
             android:inputType="phone" />
 
         <Button
-            android:id="@+id/click_pic"
+            android:id="@+id/next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@color/colorPrimary"
             android:padding="8dp"
-            android:text="Click Picture"
+            android:text="Next"
             android:textColor="@color/md_white_1000" />
     </LinearLayout>
 </RelativeLayout>

@@ -20,8 +20,8 @@ public class AddPictureActivity extends AppCompatActivity {
 
         email = getIntent().getStringExtra("email");
 
-        Button clickPicture = findViewById(R.id.click_pic);
-        clickPicture.setOnClickListener(new View.OnClickListener() {
+        Button next = findViewById(R.id.next);
+        next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 EditText phone = findViewById(R.id.phone);
