@@ -3,6 +3,12 @@
     package="com.durzoflint.remoteupload">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -12,7 +18,20 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".Agent.AgentDashboardActivity"></activity>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.durzoflint.remoteupload.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+
+        <activity android:name=".Agent.UploadPictureActivity"></activity>
+        <activity android:name=".Agent.AddPictureActivity" />
+        <activity android:name=".Agent.AgentDashboardActivity" />
         <activity android:name=".Agent.AgentLoginActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>

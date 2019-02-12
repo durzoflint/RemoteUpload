@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.durzoflint.remoteupload.Agent.AgentDashboardActivity;
 import com.durzoflint.remoteupload.Agent.AgentLoginActivity;
@@ -37,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == AGENT_LOGIN_CODE && resultCode == RESULT_OK) {
             Intent intent = new Intent(MainActivity.this, AgentDashboardActivity.class);
             intent.putExtra("email", data.getStringExtra("email"));
-            Toast.makeText(this, data.getStringExtra("email"), Toast.LENGTH_SHORT).show();
             startActivity(intent);
             finish();
         }
