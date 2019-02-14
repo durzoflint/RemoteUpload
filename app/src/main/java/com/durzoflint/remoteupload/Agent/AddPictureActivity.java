@@ -2,6 +2,7 @@ package com.durzoflint.remoteupload.Agent;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -11,6 +12,7 @@ import android.widget.Toast;
 import com.durzoflint.remoteupload.R;
 
 public class AddPictureActivity extends AppCompatActivity {
+    static final int TAKE_PICTURE = 1;
     String email;
 
     @Override
@@ -34,9 +36,17 @@ public class AddPictureActivity extends AppCompatActivity {
                     Intent intent = new Intent(AddPictureActivity.this,
                             UploadPictureActivity.class);
                     intent.putExtra("email", email);
-                    startActivity(intent);
+                    startActivityForResult(intent, TAKE_PICTURE);
                 }
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == TAKE_PICTURE && resultCode == RESULT_OK) {
+            finish();
+        }
     }
 }

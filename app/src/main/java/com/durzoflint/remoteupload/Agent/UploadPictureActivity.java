@@ -347,6 +347,7 @@ public class UploadPictureActivity extends AppCompatActivity {
             super.onPostExecute(string1);
             progressDialog.dismiss();
             Toast.makeText(UploadPictureActivity.this, string1, Toast.LENGTH_LONG).show();
+            setResult(RESULT_OK);
             finish();
         }
     }
