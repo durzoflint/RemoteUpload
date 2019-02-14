@@ -3,13 +3,18 @@ package com.durzoflint.remoteupload.Agent;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -21,6 +26,16 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.durzoflint.remoteupload.R;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -38,12 +53,17 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class UploadPictureActivity extends AppCompatActivity {
-    String uploadUrl = "http://www.remoteupload.co.in/api/uploadimage.php";
+    static final int LOCATION_REQUEST_CODE = 3;
+    static final int REQUEST_CHECK_SETTINGS = 4;
+    LocationRequest mLocationRequest;
+    String uploadUrl = "http://www.remoteupload.co.in/api/uploadmeasurementimage.php";
 
     static final int REQUEST_TAKE_PHOTO = 1;
     private static final int REQUEST_EXTERNAL_STORAGE = 2;
@@ -57,11 +77,53 @@ public class UploadPictureActivity extends AppCompatActivity {
     Uri photoURI;
     Bitmap bitmap;
     String imageFileName;
+    String addressText = "";
+    Location userLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload_picture);
+
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
+        }
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    LOCATION_REQUEST_CODE);
+        }
+
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(15 * 60 * 1000);
+        mLocationRequest.setFastestInterval(10 * 60 * 1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(mLocationRequest);
+        SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+        task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                getLocation();
+            }
+        });
+        task.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (e instanceof ResolvableApiException) {
+                    try {
+                        ResolvableApiException resolvable = (ResolvableApiException) e;
+                        resolvable.startResolutionForResult(UploadPictureActivity.this,
+                                REQUEST_CHECK_SETTINGS);
+                    } catch (IntentSender.SendIntentException ignored) {
+                    }
+                }
+            }
+        });
 
         email = getIntent().getStringExtra("email");
 
@@ -86,19 +148,6 @@ public class UploadPictureActivity extends AppCompatActivity {
 
     private void uploadImage() {
         ImageUploadToServerFunction();
-        /*try {
-            String uploadId = UUID.randomUUID().toString();
-
-            //Creating a multi part request
-            MultipartUploadRequest request = new MultipartUploadRequest(this, uploadId, uploadUrl);
-            request.addFileToUpload(mCurrentPhotoPath, "image") //Adding file
-                    *//*.setNotificationConfig(new UploadNotificationConfig())*//*
-                    .setMaxRetries(3)
-                    .startUpload(); //Starting the upload
-
-        } catch (Exception exc) {
-            Toast.makeText(this, exc.getMessage(), Toast.LENGTH_SHORT).show();
-        }*/
     }
 
     private void dispatchTakePictureIntent() {
@@ -171,7 +220,15 @@ public class UploadPictureActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(this, "Need permissions to operate", Toast.LENGTH_SHORT).show();
                 }
+                break;
             }
+            case LOCATION_REQUEST_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getLocation();
+                } else {
+                    Toast.makeText(this, "Need permissions to operate", Toast.LENGTH_SHORT).show();
+                }
+                break;
         }
     }
 
@@ -180,37 +237,21 @@ public class UploadPictureActivity extends AppCompatActivity {
         upload.execute();
     }
 
-    class AsyncTaskUploadClass extends AsyncTask<Void, Void, String> {
-        ProgressDialog progressDialog;
-        HashMap<String, String> HashMapParams = new HashMap<>();
-        ImageProcessClass imageProcessClass = new ImageProcessClass();
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            progressDialog = ProgressDialog.show(UploadPictureActivity.this, "Image is Uploading",
-                    "Please Wait", false, false);
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            ByteArrayOutputStream byteArrayOutputStreamObject;
-            byteArrayOutputStreamObject = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 10, byteArrayOutputStreamObject);
-            byte[] byteArrayVar = byteArrayOutputStreamObject.toByteArray();
-            final String ConvertImage = Base64.encodeToString(byteArrayVar, Base64.DEFAULT);
-            HashMapParams.put("image_name", imageFileName);
-            HashMapParams.put("image", ConvertImage);
-            String FinalData = imageProcessClass.ImageHttpRequest(uploadUrl, HashMapParams);
-            return FinalData;
-        }
-
-        @Override
-        protected void onPostExecute(String string1) {
-            super.onPostExecute(string1);
-            progressDialog.dismiss();
-            Toast.makeText(UploadPictureActivity.this, string1, Toast.LENGTH_LONG).show();
-            //finish();
+    void getLocation() {
+        FusedLocationProviderClient mFusedLocationClient =
+                LocationServices.getFusedLocationProviderClient(this);
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mFusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                userLocation = location;
+                                new GetAddress().execute(location);
+                            }
+                        }
+                    });
         }
     }
 
@@ -269,6 +310,75 @@ public class UploadPictureActivity extends AppCompatActivity {
                 stringBuilderObject.append(URLEncoder.encode(KEY.getValue(), "UTF-8"));
             }
             return stringBuilderObject.toString();
+        }
+    }
+
+    class AsyncTaskUploadClass extends AsyncTask<Void, Void, String> {
+        ProgressDialog progressDialog;
+        HashMap<String, String> HashMapParams = new HashMap<>();
+        ImageProcessClass imageProcessClass = new ImageProcessClass();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = ProgressDialog.show(UploadPictureActivity.this, "Image is Uploading",
+                    "Please Wait", false, false);
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            ByteArrayOutputStream byteArrayOutputStreamObject;
+            byteArrayOutputStreamObject = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 10, byteArrayOutputStreamObject);
+            byte[] byteArrayVar = byteArrayOutputStreamObject.toByteArray();
+            final String ConvertImage = Base64.encodeToString(byteArrayVar, Base64.DEFAULT);
+            HashMapParams.put("email", email);
+            HashMapParams.put("latitude", userLocation.getLatitude() + "");
+            HashMapParams.put("longitude", userLocation.getLongitude() + "");
+            HashMapParams.put("address", addressText);
+            HashMapParams.put("image_name", imageFileName);
+            HashMapParams.put("image", ConvertImage);
+            String FinalData = imageProcessClass.ImageHttpRequest(uploadUrl, HashMapParams);
+            return FinalData;
+        }
+
+        @Override
+        protected void onPostExecute(String string1) {
+            super.onPostExecute(string1);
+            progressDialog.dismiss();
+            Toast.makeText(UploadPictureActivity.this, string1, Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+    class GetAddress extends AsyncTask<Location, Void, Void> {
+        @Override
+        protected Void doInBackground(Location... locations) {
+            addressText = "";
+            Location location = locations[0];
+            List<Address> addresses = null;
+            Geocoder geocoder = new Geocoder(UploadPictureActivity.this, Locale.getDefault());
+            try {
+                addresses = geocoder.getFromLocation(location.getLatitude(),
+                        location.getLongitude(), 1);
+            } catch (IOException ioException) {
+                /*Toast.makeText(context, "Network Weak, can't fetch address", Toast
+                .LENGTH_SHORT).show();*/
+            }
+            if (addresses == null || addresses.size() == 0) {
+                /*Toast.makeText(context, "Address not found", Toast.LENGTH_SHORT).show();*/
+            } else {
+                Address address = addresses.get(0);
+                for (int i = 0; i <= address.getMaxAddressLineIndex(); i++)
+                    addressText =
+                            addressText + System.getProperty("line.separator") + address.getAddressLine(i);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
         }
     }
 }
