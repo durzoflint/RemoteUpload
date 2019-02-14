@@ -28,5 +28,14 @@ public class AgentDashboardActivity extends AppCompatActivity {
             }
         });
         TextView installation = findViewById(R.id.installation);
+        installation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(AgentDashboardActivity.this,
+                        ListInstallationActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
+            }
+        });
     }
 }

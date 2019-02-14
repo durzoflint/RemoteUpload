@@ -5,11 +5,13 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.widget.Toast;
 
+import com.durzoflint.remoteupload.Agent.Adapters.Adapter;
+import com.durzoflint.remoteupload.Agent.Adapters.ClickListener;
+import com.durzoflint.remoteupload.Agent.Adapters.Data;
 import com.durzoflint.remoteupload.R;
 
 import java.io.BufferedReader;
@@ -17,37 +19,46 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
-public class AgentLoginActivity extends AppCompatActivity {
-    String emailId;
+public class ListInstallationActivity extends AppCompatActivity {
+    List<Data> list;
+    String email;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_agent_login);
+        setContentView(R.layout.activity_list_installation);
 
-        Button login = findViewById(R.id.login);
-        login.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                EditText email = findViewById(R.id.email);
-                EditText password = findViewById(R.id.password);
-                emailId = email.getText().toString();
-
-                new Login().execute(emailId, password.getText().toString());
-            }
-        });
+        Intent intent = getIntent();
+        email = intent.getStringExtra("email");
+        list = new ArrayList<>();
+        new FetchMeasurment().execute(email);
     }
 
-    class Login extends AsyncTask<String, Void, Void> {
+    void setupRecyclerView(List<Data> list) {
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        Adapter adapter = new Adapter(this, list, new ClickListener() {
+            @Override
+            public void onCLick(int position) {
+                Toast.makeText(ListInstallationActivity.this, "I was clicked at " + position,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    class FetchMeasurment extends AsyncTask<String, Void, Void> {
         String baseUrl = "http://www.remoteupload.co.in/api/", webPage = "";
         ProgressDialog progressDialog;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            progressDialog = ProgressDialog.show(AgentLoginActivity.this, "Logging In", "Please " +
-                    "Wait");
+            progressDialog = ProgressDialog.show(ListInstallationActivity.this, "Please Wait",
+                    "Fetching Data");
         }
 
         @Override
@@ -56,7 +67,7 @@ public class AgentLoginActivity extends AppCompatActivity {
             HttpURLConnection urlConnection = null;
             try {
                 String myURL =
-                        baseUrl + "loginagent.php?email=" + strings[0] + "&password=" + strings[1];
+                        baseUrl + "fetchmeasurement.php?email=" + strings[0];
                 myURL = myURL.replaceAll(" ", "%20");
                 myURL = myURL.replaceAll("\'", "%27");
                 myURL = myURL.replaceAll("\'", "%22");
@@ -87,22 +98,26 @@ public class AgentLoginActivity extends AppCompatActivity {
         protected void onCancelled(Void aVoid) {
             super.onCancelled(aVoid);
             progressDialog.dismiss();
-
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             progressDialog.dismiss();
-            if (webPage.equals("success")) {
-                Toast.makeText(AgentLoginActivity.this, "Login Success", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent();
-                intent.putExtra("email", emailId);
-                setResult(RESULT_OK, intent);
-                finish();
-            } else
-                Toast.makeText(AgentLoginActivity.this, "Invalid Credentials",
-                        Toast.LENGTH_SHORT).show();
+            while (webPage.contains("<br>")) {
+                int brI = webPage.indexOf("<br>");
+                String id = webPage.substring(0, brI);
+                webPage = webPage.substring(brI + 4);
+                brI = webPage.indexOf("<br>");
+                String address = webPage.substring(0, brI);
+                webPage = webPage.substring(brI + 4);
+                brI = webPage.indexOf("<br>");
+                String image = webPage.substring(0, brI);
+                webPage = webPage.substring(brI + 4);
+
+                list.add(new Data(id, image, address));
+            }
+            setupRecyclerView(list);
         }
     }
 }
