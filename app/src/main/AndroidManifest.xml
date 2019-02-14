@@ -21,7 +21,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".Agent.ListInstallationActivity"></activity>
+        <activity android:name=".Agent.UploadInstallationImageActivity"></activity>
+        <activity android:name=".Agent.ListInstallationActivity" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"

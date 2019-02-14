@@ -4,10 +4,10 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.widget.Toast;
 
 import com.durzoflint.remoteupload.Agent.Adapters.Adapter;
 import com.durzoflint.remoteupload.Agent.Adapters.ClickListener;
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ListInstallationActivity extends AppCompatActivity {
+    static final int TAKE_PIC = 1;
     List<Data> list;
     String email;
 
@@ -37,17 +38,28 @@ public class ListInstallationActivity extends AppCompatActivity {
         new FetchMeasurment().execute(email);
     }
 
-    void setupRecyclerView(List<Data> list) {
+    void setupRecyclerView(final List<Data> list) {
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         Adapter adapter = new Adapter(this, list, new ClickListener() {
             @Override
             public void onCLick(int position) {
-                Toast.makeText(ListInstallationActivity.this, "I was clicked at " + position,
-                        Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(ListInstallationActivity.this,
+                        UploadInstallationImageActivity.class);
+                intent.putExtra("email", email);
+                intent.putExtra("id", list.get(position).id);
+                startActivityForResult(intent, TAKE_PIC);
             }
         });
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == TAKE_PIC && resultCode == RESULT_OK) {
+            finish();
+        }
     }
 
     class FetchMeasurment extends AsyncTask<String, Void, Void> {
