@@ -21,7 +21,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".Admin.CreateAgentActivity"></activity>
+        <activity android:name=".Admin.ListImagesActivity"></activity>
+        <activity android:name=".Admin.FilterActivity" />
+        <activity android:name=".Admin.CreateAgentActivity" />
         <activity android:name=".Admin.AdminDashboardActivity" />
         <activity android:name=".Agent.AddInstallationPictureActivity" />
         <activity android:name=".Admin.LoginAdminActivity" />

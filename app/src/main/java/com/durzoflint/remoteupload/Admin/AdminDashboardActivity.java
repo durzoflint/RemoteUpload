@@ -19,6 +19,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
         email = getIntent().getStringExtra("email");
 
         Button next = findViewById(R.id.next);
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(AdminDashboardActivity.this, FilterActivity.class);
+                intent.putExtra("email", email);
+                startActivity(intent);
+            }
+        });
+
         Button createAgent = findViewById(R.id.create_agent);
         createAgent.setOnClickListener(new View.OnClickListener() {
             @Override
