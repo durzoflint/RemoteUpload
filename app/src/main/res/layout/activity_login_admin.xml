@@ -12,8 +12,8 @@
         android:layout_above="@+id/view_login"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="40dp"
-        android:text="Login as Agent"
-        android:textColor="@color/colorPrimary"
+        android:text="Login as Admin"
+        android:textColor="@color/md_white_1000"
         android:textSize="18sp" />
 
     <LinearLayout
