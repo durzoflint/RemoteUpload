@@ -126,8 +126,14 @@ public class ListInstallationActivity extends AppCompatActivity {
                 brI = webPage.indexOf("<br>");
                 String image = webPage.substring(0, brI);
                 webPage = webPage.substring(brI + 4);
+                brI = webPage.indexOf("<br>");
+                String shopName = webPage.substring(0, brI);
+                webPage = webPage.substring(brI + 4);
+                brI = webPage.indexOf("<br>");
+                String details = webPage.substring(0, brI);
+                webPage = webPage.substring(brI + 4);
 
-                list.add(new Data(id, image, address));
+                list.add(new Data(id, image, address, shopName, details));
             }
             setupRecyclerView(list);
         }

@@ -22,6 +22,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -79,6 +80,7 @@ public class UploadPictureActivity extends AppCompatActivity {
     String imageFileName;
     String addressText = "";
     Location userLocation;
+    String nameText = "", detailsText = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +143,15 @@ public class UploadPictureActivity extends AppCompatActivity {
         upload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                uploadImage();
+                EditText name = findViewById(R.id.name);
+                EditText details = findViewById(R.id.details);
+                nameText = name.getText().toString();
+                detailsText = details.getText().toString();
+                if (nameText.isEmpty() || detailsText.isEmpty())
+                    Toast.makeText(UploadPictureActivity.this, "Please enter name and details",
+                            Toast.LENGTH_SHORT).show();
+                else
+                    uploadImage();
             }
         });
     }
@@ -338,6 +348,8 @@ public class UploadPictureActivity extends AppCompatActivity {
             HashMapParams.put("address", addressText);
             HashMapParams.put("image_name", imageFileName);
             HashMapParams.put("image", ConvertImage);
+            HashMapParams.put("name", nameText);
+            HashMapParams.put("details", detailsText);
             String FinalData = imageProcessClass.ImageHttpRequest(uploadUrl, HashMapParams);
             return FinalData;
         }

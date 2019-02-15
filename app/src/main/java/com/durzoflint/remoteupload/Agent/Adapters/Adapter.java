@@ -36,6 +36,8 @@ public class Adapter extends RecyclerView.Adapter<ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.address.setText(list.get(position).address);
         Glide.with(context).load(list.get(position).imageUrl).into(holder.image);
+        holder.shopName.setText(list.get(position).shopName);
+        holder.details.setText(list.get(position).details);
     }
 
     @Override
