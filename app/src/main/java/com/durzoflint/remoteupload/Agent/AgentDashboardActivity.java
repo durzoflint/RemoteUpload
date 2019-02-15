@@ -32,7 +32,7 @@ public class AgentDashboardActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(AgentDashboardActivity.this,
-                        ListInstallationActivity.class);
+                        AddInstallationPictureActivity.class);
                 intent.putExtra("email", email);
                 startActivity(intent);
             }
